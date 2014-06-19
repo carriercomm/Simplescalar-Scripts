@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if [ -z "$1" ]   #if the first argument is null (aka if config file not provided)
+then 
+    echo "Error: Missing cfg file. Usage: runall.script cfg_file"
+    exit 1
+fi
+
+CFG_FILE=$1
+
+cd bzip2
+
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE bzip2_base.i386-m32-gcc42-nn dryer.jpg
+
+cd ../equake
+
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE equake_base.pisa_little < inp.in > inp.out
+
+cd ../hmmer
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE hmmer_base.i386-m32-gcc42-nn bombesin.hmm
+
+cd ../mcf
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE mcf_base.i386-m32-gcc42-nn inp.in
+
+cd ../milc
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE milc_base.i386-m32-gcc42-nn < su3imp.in
+
+cd ../sjeng
+$SIMPLESIM/simplesim-3.0/sim-outorder -config ../$CFG_FILE sjeng_base.i386-m32-gcc42-nn test.txt
+
+exit 0

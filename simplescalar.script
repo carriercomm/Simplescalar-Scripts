@@ -1,0 +1,94 @@
+#! /bin/bash
+
+#PRE_CONDITIONS
+#	1. Any number of arguements can be passed to this script, but the last arguement must be the name of the new folder that you would like to place
+#		the new data in
+#	2. The .cfg files have their .out file named exactly as the .cfg file is (ex. tmp.cfg would have a tmp.out output file)
+
+#this script is called to run the simple scalar program an N amount
+#of times (where N is #args-1). After simple scalar completes N runs
+#the script uses myExtract to parse the wanted data from the output
+#files of the simplescalar runs. After it extracts the the data
+#from the .out files using the myExtract_ python script, It takes
+#the data it just stored into .log files and places them in the new 
+#folder specified by the last arguement of the script. It then gathers 
+#the data from all the log files into one text file which can be immediately
+#copied and pasted into excel comments in the python scripts are lacking... sorry.
+
+#Extract all but the last arguement into the variable
+#called FILES
+array=( $@ )
+len=${#array[@]}
+FILES=${array[@]:0:$len-1}
+
+#run the "runall.script" $@ -1 times since the
+#last arguement is the new folder name. This is 
+#why we previously extracted all but the last 
+#arguement into FILES
+for file in $FILES
+do	
+	runall.script $file.cfg
+done
+
+#Run the myExtract python script $@ -1 amount of 
+#times to create all of the log files
+for file in $FILES
+do
+	python myExtract.py $file.out $file
+done
+
+#make a new folder based on the last arguement and
+#then change directories into it
+NEW_FOLDER=${array[$len-1]}
+
+
+#This will check to see if the folder already exists, 
+#and if it does then this means that the script could have 
+#already been called with a larger amount of arguements, meaning
+#that there would be leftover .log files that we don't want after
+#our script completes. Therefore if the folder exists already
+#it will delete it before creating it again.
+if [ -d $NEW_FOLDER ]; 
+then
+	rm -Rf $NEW_FOLDER
+fi
+
+mkdir $NEW_FOLDER -p
+cd ${NEW_FOLDER}
+
+#make new directories within the new folder to hold
+#all of our .log files for organizational purposes
+mkdir hmmer -p
+mkdir sjeng -p
+mkdir mcf -p
+mkdir milc -p
+mkdir bzip2 -p
+mkdir equake -p
+
+#change directories back out of our new folder
+cd .. 
+
+#Copy all of the .log files we just created into their
+#corresponding folders within the new folder
+for file in $FILES
+do 
+	mv ./${file}_bzip2_results.log ./${NEW_FOLDER}/bzip2
+	mv ./${file}_mcf_results.log ./${NEW_FOLDER}/mcf
+	mv ./${file}_milc_results.log ./${NEW_FOLDER}/milc
+	mv ./${file}_hmmer_results.log ./${NEW_FOLDER}/hmmer
+	mv ./${file}_equake_results.log ./${NEW_FOLDER}/equake
+	mv ./${file}_sjeng_results.log ./${NEW_FOLDER}/sjeng
+done
+
+#copy the script into new folder for future reference
+cp ./tableFormat.py ${NEW_FOLDER}
+
+#change directory back into our folder, and call the python
+#script that was just copied into it
+cd ${NEW_FOLDER}
+
+#run the tableFormat python script which parses every .log file
+#that we created in our new foler, and extracts them into one file
+#so that the exportation process to excel is extremely accelerated
+python tableFormat.py $@
+
